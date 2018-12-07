@@ -9,6 +9,40 @@ fn main() -> std::io::Result<()> {
     file.read_to_string(&mut contents)?;
 
     let lines = contents.lines();
+    for line1 in lines {
+        let contents2 = contents.clone();
+        let lines2 = contents2.lines();
+        for line2 in lines2 {
+            let diff = char_difference(&line1.to_string(),
+                                       &line2.to_string());
+            if diff {
+                println!("{}", line1);
+                println!("{}", line2);
+            }
+        }
+    }
+    Ok(())
+}
+
+fn char_difference(word1 : &String, word2 : &String) -> bool {
+    return word1.chars()
+                .zip(word2.chars())
+                .filter(|x| {
+                    match x {
+                        (y,z) => {
+                            y != z
+                        }
+                    }
+                })
+                .count() == 1;
+}
+
+fn _day2_part_1() -> std::io::Result<()> {
+    let mut file = File::open("inputs/day-2-input.txt")?;
+    let mut contents = String::new();
+    file.read_to_string(&mut contents)?;
+
+    let lines = contents.lines();
     let mut count_with_two: i32 = 0;
     let mut count_with_three: i32 = 0;
     for line in lines {
