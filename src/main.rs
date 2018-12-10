@@ -8,6 +8,63 @@ fn main() -> std::io::Result<()> {
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
 
+    let mut hashy : HashMap<(u32, u32), u32> = HashMap::new();
+    for line in contents.lines() {
+        let words : Vec<&str> = line.split(' ').collect();
+        // ["#2", "@", "518,811:", "15x18"]
+        let start_coords : Vec<u32> = words[2].split_at(words[2].len()-1)
+                                   .0
+                                   .split(',')
+                                   .map(|s| s.parse().unwrap())
+                                   .collect();
+        let size : Vec<u32> = words[3].split('x')
+                                      .map(|s| s.parse().unwrap())
+                                      .collect();
+        for x in start_coords[0]..start_coords[0]+size[0] {
+            for y in start_coords[1]..start_coords[1]+size[1] {
+                hashy.entry((x,y)).and_modify(|x| { *x += 1 }).or_insert(1);
+            }
+        }
+    }
+    for line in contents.lines() {
+        let words : Vec<&str> = line.split(' ').collect();
+        // ["#2", "@", "518,811:", "15x18"]
+        let start_coords : Vec<u32> = words[2].split_at(words[2].len()-1)
+                                   .0
+                                   .split(',')
+                                   .map(|s| s.parse().unwrap())
+                                   .collect();
+        let size : Vec<u32> = words[3].split('x')
+                                      .map(|s| s.parse().unwrap())
+                                      .collect();
+        let id = words[0].split_at(0).1;
+        let mut is_overlapping = false;
+        for x in start_coords[0]..start_coords[0]+size[0] {
+            for y in start_coords[1]..start_coords[1]+size[1] {
+                match hashy.get(&(x,y)) {
+                    Some(x) => {
+                        if *x > 1 {
+                            is_overlapping = true;
+                        }
+                    },
+                    None => {
+                        //pass
+                    }
+                };
+            }
+        }
+        if is_overlapping == false {
+            println!("{}", id);
+        }
+    }
+    Ok(())
+}
+
+fn _day_3_part_1() -> std::io::Result<()> {
+    let mut file = File::open("inputs/day-3-input.txt")?;
+    let mut contents = String::new();
+    file.read_to_string(&mut contents)?;
+
     let lines = contents.lines();
     let mut hashy : HashMap<(u32, u32), u32> = HashMap::new();
     for line in lines {
