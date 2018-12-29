@@ -2,8 +2,64 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::collections::HashSet;
 use std::collections::HashMap;
+use std::iter::FromIterator;
 
 fn main() -> std::io::Result<()> {
+    let mut file = File::open("inputs/day-4-input.txt")?;
+    let mut contents = String::new();
+    file.read_to_string(&mut contents)?;
+
+    let mut asleep_for : HashMap<u32, i32> = HashMap::new();
+    let mut asleep_hourly_counts : HashMap<u32, HashMap<u32, u32>> = HashMap::new();
+    let mut current_guard = 0;
+    let mut asleep_at : u32 = 0;
+    let mut awake_at : u32;
+    let mut blah = contents.lines();
+    let mut vblah = Vec::from_iter(blah);
+    vblah.sort();
+    for line in vblah.iter() {
+        let words : Vec<&str> = line.split(' ').collect();
+        if words.len() == 6 {
+            current_guard = words[3].split_at(1).1.parse().unwrap();
+        } else {
+            if words[2] == "falls" {
+                asleep_at = words[1].split(':').nth(1).unwrap()
+                                    .split_at(2).0.parse().unwrap();
+            } else {
+                awake_at = words[1].split(':').nth(1).unwrap()
+                                   .split_at(2).0.parse().unwrap();
+                let asleep_for_segment = awake_at as i32 - asleep_at as i32;
+                asleep_for.entry(current_guard)
+                          .and_modify(|x| { *x += asleep_for_segment})
+                          .or_insert(asleep_for_segment);
+                let guards_hours = asleep_hourly_counts.entry(current_guard)
+                                                       .or_insert(HashMap::new());
+                for x in asleep_at..awake_at {
+                    guards_hours.entry(x).and_modify(|x| { *x += 1}).or_insert(1);
+                }
+
+            }
+        }
+    }
+    let mut largest_guard : u32 = 0;
+    let mut largest_guard_asleep_time : i32 = 0;
+    for (k,v) in asleep_for.iter() {
+        if *v > largest_guard_asleep_time {
+            largest_guard_asleep_time = *v;
+            largest_guard = *k;
+        }
+    }
+    println!("Largest Guard: {}", largest_guard);
+    println!("Largest Guard Asleep Time: {}", largest_guard_asleep_time);
+    let counts = asleep_hourly_counts.get(&largest_guard).unwrap();
+    let result = counts.iter().max_by(|&(_, item), &(_, item2)| item.cmp(item2));
+    println!("{:?}", result.unwrap());
+
+    println!("The Answer: {}", result.unwrap().0 * largest_guard);
+    Ok(())
+}
+
+fn _day_3_part_2() -> std::io::Result<()> {
     let mut file = File::open("inputs/day-3-input.txt")?;
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
