@@ -5,6 +5,113 @@ use std::collections::HashMap;
 use std::iter::FromIterator;
 
 fn main() -> std::io::Result<()> {
+    let mut file = File::open("inputs/day-5-input.txt")?;
+    let mut contents = String::new();
+    file.read_to_string(&mut contents)?;
+
+    let mut smallest_length = process_until_done(contents.trim().to_string()).len();
+    for letter in "abcdefghijklmnopqrstuvwxyz".to_string().chars() {
+        let new_str = process_until_done(remove_all_units(contents.trim().to_string(), letter));
+        let lennn = new_str.len();
+        println!("Processing {} {}", letter, lennn);
+        if lennn < smallest_length {
+            smallest_length = lennn;
+        }
+    }
+    println!("Answer: {}", smallest_length);
+    Ok(())
+}
+
+fn remove_all_units(s : String, c : char) -> String {
+    let mut new_chars : Vec<char> = Vec::new();
+
+    for cc in s.chars() {
+        if cc.to_ascii_lowercase() != c {
+            new_chars.push(cc);
+        }
+    }
+
+    return new_chars.iter().collect();
+}
+
+fn process_until_done(s : String) -> String {
+    let mut current_string = s.clone();
+    let mut processed_string = process_one_pass(current_string.clone());
+
+    while processed_string.len() < current_string.len() {
+        current_string = processed_string;
+        processed_string = process_one_pass(current_string.clone());
+    }
+
+    return processed_string.clone();
+}
+
+fn process_one_pass(s : String) -> String {
+    let chars : Vec<char> = s.chars().collect();
+    let mut new_chars : Vec<char> = Vec::new();
+    let mut i : usize = 0;
+    while i < chars.len() {
+        let c1 = chars.get(i);
+        let c2 = chars.get(i+1);
+        match (c1,c2) {
+            (Some(cc1), Some(cc2)) => {
+                if cc1 != cc2 && cc1.to_ascii_uppercase() == cc2.to_ascii_uppercase() {
+                    i = i + 2;
+                } else {
+                    new_chars.push(*cc1);
+                    i = i + 1;
+                }
+            }
+            (Some(cc1), None) => {
+                new_chars.push(*cc1);
+                i = i + 1;
+            }
+            _ => {
+                i = i + 1;
+            }
+        }
+    }
+    return new_chars.iter().collect();
+}
+
+#[test]
+fn test_process_until_done() {
+    assert_eq!(process_until_done("dabAcCaCBAcCcaDA".to_string()), "dabCBAcaDA");
+    assert_eq!(process_until_done("AbBa".to_string()), "");
+    assert_eq!(process_until_done("AbBaAbBaAbBaAbBaAbBaAbBaAbBaAbBa".to_string()), "");
+    assert_eq!(process_until_done("AbBaAbBaAbBaAbBaAbBaAbBaAbBaAbBaccccccc".to_string()),
+                                  "ccccccc");
+    assert_eq!(process_until_done("".to_string()), "");
+    assert_eq!(process_until_done("a".to_string()), "a");
+    assert_eq!(process_until_done("b".to_string()), "b");
+    assert_eq!(process_until_done("abcdefghijklmnopqrstuvwxyz".to_string()),
+                                  "abcdefghijklmnopqrstuvwxyz");
+    assert_eq!(process_until_done("abcdefghijklmnopqrstuvwxyzZYXWVUTSRQPONMLKJIHGFEDCBA".to_string()),
+                                  "");
+}
+
+#[test]
+fn test_process_one_pass() {
+    assert_eq!(process_one_pass("Aa".to_string()), "");
+    assert_eq!(process_one_pass("AbaA".to_string()), "Ab");
+    assert_eq!(process_one_pass("AbaAcC".to_string()), "Ab");
+    assert_eq!(process_one_pass("Acca".to_string()), "Acca");
+    assert_eq!(process_one_pass("AcbBBbca".to_string()), "Acca");
+    assert_eq!(process_one_pass("AcbBbbBbca".to_string()), "Acbbca");
+    assert_eq!(process_one_pass("BbBbBbbBBbBbBaA".to_string()), "B");
+}
+
+#[test]
+fn test_length_stuff() {
+    let my_string = "AbBa".to_string();
+    let original_length = my_string.len();
+    let my_processed_string = process_one_pass(process_one_pass(my_string.clone()));
+    assert_eq!(my_string.len(), 4);
+    assert_eq!(my_processed_string.len(), 0);
+    assert_eq!(original_length, 4);
+}
+
+fn _day_4_part_2() -> std::io::Result<()> {
     let mut file = File::open("inputs/day-4-input.txt")?;
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
@@ -53,22 +160,6 @@ fn main() -> std::io::Result<()> {
         }
     }
     println!("The Answer: {}", largest_guard * largest_guard_asleep_minute);
-
-/*     let mut largest_guard : u32 = 0;
-    let mut largest_guard_asleep_time : i32 = 0;
-    for (k,v) in asleep_for.iter() {
-        if *v > largest_guard_asleep_time {
-            largest_guard_asleep_time = *v;
-            largest_guard = *k;
-        }
-    }
-    println!("Largest Guard: {}", largest_guard);
-    println!("Largest Guard Asleep Time: {}", largest_guard_asleep_time);
-    let counts = asleep_hourly_counts.get(&largest_guard).unwrap();
-    let result = counts.iter().max_by(|&(_, item), &(_, item2)| item.cmp(item2));
-    println!("{:?}", result.unwrap());
-
-    println!("The Answer: {}", result.unwrap().0 * largest_guard); */
     Ok(())
 }
 
@@ -82,8 +173,7 @@ fn _day_4_part_1() -> std::io::Result<()> {
     let mut current_guard = 0;
     let mut asleep_at : u32 = 0;
     let mut awake_at : u32;
-    let mut blah = contents.lines();
-    let mut vblah = Vec::from_iter(blah);
+    let mut vblah = Vec::from_iter(contents.lines());
     vblah.sort();
     for line in vblah.iter() {
         let words : Vec<&str> = line.split(' ').collect();
